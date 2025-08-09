@@ -1,14 +1,19 @@
-from typing import Callable, Any, Dict, Tuple
+from typing import Any, Callable
 from functools import wraps
-
+from inspect import signature
 
 def cache(func: Callable) -> Callable:
-    store: Dict[Tuple[Any, Tuple[Tuple[str, Any], ...]], Any] = {}
+    store = {}
+    sig = signature(func)
 
     @wraps(func)
     def wrapper(*args: Any, **kwargs: Any) -> Any:
-        # Створюємо хешований ключ з args + впорядковані kwargs
-        key = (args, tuple(sorted(kwargs.items())))
+        # Canonicalize arguments → match them to parameter names
+        bound = sig.bind(*args, **kwargs)
+        bound.apply_defaults()
+
+        # Convert bound arguments to a hashable key
+        key = tuple(bound.arguments.items())
 
         if key in store:
             print("Getting from cache")
